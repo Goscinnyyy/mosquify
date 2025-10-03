@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "926905081367",
+    "firebase_url": "https://mosquifyy-default-rtdb.firebaseio.com",
+    "project_id": "mosquifyy",
+    "storage_bucket": "mosquifyy.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:926905081367:android:d9a6a0c792c93d07ee8652",
+        "android_client_info": {
+          "package_name": "com.example.mosquify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAs5r5eWIF9gZvELh4Sx7EdUrIRxwryZ2E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
