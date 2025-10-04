@@ -21,7 +21,20 @@ class _RegisterPageState extends State<RegisterPage> {
 
   final List<String> _addressOptions = ['Kambang', 'Tapan'];
 
+  // GANTI FUNGSI _register() ANDA DENGAN YANG INI
+
   Future<void> _register() async {
+    // Tambahkan validasi sederhana sebelum mencoba mendaftar
+    if (_emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _firstNameController.text.isEmpty ||
+        _selectedAddress == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Harap isi semua kolom yang wajib.")),
+      );
+      return; // Hentikan fungsi jika ada yang kosong
+    }
+
     try {
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
@@ -41,12 +54,46 @@ class _RegisterPageState extends State<RegisterPage> {
         });
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Pendaftaran berhasil! Silakan masuk.")),
-      );
+      // ===============================================
+      // === BAGIAN INI YANG DIUBAH (DARI SNACKBAR KE POP-UP) ===
+      // ===============================================
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginPage()),
+      // Pastikan widget masih ada di tree sebelum menampilkan dialog
+      if (!mounted) return;
+
+      // Tampilkan pop-up dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false, // User harus menekan tombol untuk menutup
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0),
+            ),
+            title: const Text("Pendaftaran Berhasil"),
+            content: const Text(
+              "Akun Anda telah berhasil dibuat. Silakan masuk untuk melanjutkan.",
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text(
+                  "Masuk Sekarang",
+                  style: TextStyle(
+                    color: Color(0xFF052659), // Warna sesuai tombol Anda
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                onPressed: () {
+                  // Pindahkan navigasi ke sini
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                    (Route<dynamic> route) => false,
+                  );
+                },
+              ),
+            ],
+          );
+        },
       );
     } on FirebaseAuthException catch (e) {
       String message = "Pendaftaran gagal";
@@ -121,6 +168,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     controller: _emailController,
                     decoration: InputDecoration(
                       hintText: 'Masukkan Email',
+                      hintStyle: const TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'DMSans',
+                      ),
                       filled: true,
                       fillColor: const Color(0x5CD9D9D9),
                       border: OutlineInputBorder(
@@ -139,6 +190,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     controller: _firstNameController,
                     decoration: InputDecoration(
                       hintText: 'Masukkan Nama Depan',
+                      hintStyle: const TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'DMSans',
+                      ),
                       filled: true,
                       fillColor: const Color(0x5CD9D9D9),
                       border: OutlineInputBorder(
@@ -157,6 +212,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     controller: _lastNameController,
                     decoration: InputDecoration(
                       hintText: 'Masukkan Nama Belakang',
+                      hintStyle: const TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'DMSans',
+                      ),
                       filled: true,
                       fillColor: const Color(0x5CD9D9D9),
                       border: OutlineInputBorder(
@@ -175,6 +234,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
                       hintText: 'Masukkan Nomor Handphone',
+                      hintStyle: const TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'DMSans',
+                      ),
                       filled: true,
                       fillColor: const Color(0x5CD9D9D9),
                       border: OutlineInputBorder(
@@ -211,6 +274,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           vertical: 15,
                         ),
                         hintText: "Pilih tempat tinggal...",
+                        hintStyle: const TextStyle(
+                          fontSize: 14,
+                          fontFamily: 'DMSans',
+                        ),
                         filled: true,
                         fillColor: const Color(0x5CD9D9D9),
                         border: OutlineInputBorder(
@@ -264,6 +331,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     obscureText: true,
                     decoration: InputDecoration(
                       hintText: 'Masukkan kata sandi',
+                      hintStyle: const TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'DMSans',
+                      ),
                       filled: true,
                       fillColor: const Color(0x5CD9D9D9),
                       border: OutlineInputBorder(

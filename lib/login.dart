@@ -124,10 +124,11 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _emailController,
                     style: const TextStyle(fontSize: 14, color: Colors.black),
                     decoration: InputDecoration(
-                      hintText: 'Type Here...',
+                      hintText: 'Ketik Disini...',
                       hintStyle: const TextStyle(
                         fontSize: 14,
                         color: Color(0x36000000),
+                        fontFamily: 'DMSans',
                       ),
                       filled: true,
                       fillColor: const Color(0x5CD9D9D9),
@@ -160,10 +161,11 @@ class _LoginPageState extends State<LoginPage> {
                     obscureText: true,
                     style: const TextStyle(fontSize: 14, color: Colors.black),
                     decoration: InputDecoration(
-                      hintText: 'Type Here...',
+                      hintText: 'Ketik Disini...',
                       hintStyle: const TextStyle(
                         fontSize: 14,
                         color: Color(0x36000000),
+                        fontFamily: 'DMSans',
                       ),
                       filled: true,
                       fillColor: const Color(0x5CD9D9D9),
