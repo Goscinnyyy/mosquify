@@ -23,8 +23,6 @@ dependencies:
   google_maps_flutter: ^2.5.0
   http: ^1.2.2
   google_generative_ai: ^0.4.7
-  
-
 
 dev_dependencies:
   flutter_test:
@@ -41,7 +39,7 @@ flutter:
         - asset: assets/font/DMSans-VariableFont_opsz,wght.ttf
           weight: 400
           style: normal
-    - family : OpenSans
+    - family: OpenSans
       fonts:
         - asset: assets/font/Open_Sans/OpenSans-VariableFont_wdth,wght.ttf
           weight: 400
@@ -54,20 +52,9 @@ flutter:
     - assets/icons/
 
 flutter_native_splash:
-  # The background color of your splash screen.
-  color: "#052659" # Use "#42a5f5" for a blue background, for example
-
-  # The image asset to display in the center.
-  # Make sure you have this image in your assets folder.
+  color: "#052659"
   image: assets/images/splash_mosquify.png
-
-  # For Android 12+ devices, you need to provide a separate icon.
-  # This icon will be displayed on the splash screen.
-  # It should be a 108x108px transparent PNG.
-
-  # Optional: to display a branding image at the bottom
-  # branding: assets/branding_logo.png
-  # branding_mode: bottom
-
-  # Set to false if you want to show the status bar.
-  fullscreen: true
+  fullscreen: false
+  android_12:
+    image: assets/images/splash_mosquify.png
+    color: "#052659"

@@ -4,25 +4,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
-// Enum untuk merepresentasikan pilihan jenis kelamin
 enum Gender { lakiLaki, perempuan }
 
-class formPage extends StatefulWidget {
-  const formPage({super.key});
+class FormPage extends StatefulWidget {
+  const FormPage({super.key});
 
   @override
-  State<formPage> createState() => _formPageState();
+  State<FormPage> createState() => _FormPageState();
 }
 
-class _formPageState extends State<formPage> {
+class _FormPageState extends State<FormPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Variabel untuk menyimpan data pengguna yang akan ditampilkan
   String _firstName = '';
   String _tanggal = "";
   bool _isLoading = true;
 
-  // Variabel untuk formulir
   final _namaController = TextEditingController();
   final _nikController = TextEditingController();
   final _keluhanController = TextEditingController();
@@ -81,7 +78,6 @@ class _formPageState extends State<formPage> {
       final docRef = FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid);
-
       try {
         final doc = await docRef.get();
         final data = doc.data();
@@ -94,8 +90,7 @@ class _formPageState extends State<formPage> {
           String? displayName = user.displayName;
           String fName = '';
           if (displayName != null && displayName.isNotEmpty) {
-            final parts = displayName.split(' ');
-            fName = parts.isNotEmpty ? parts.first : '';
+            fName = displayName.split(' ').first;
           }
           await docRef.set({'firstName': fName});
           setState(() {
@@ -129,7 +124,7 @@ class _formPageState extends State<formPage> {
           data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.light(
               primary: Color(0xFF14438B),
-              onPrimary: Color.fromARGB(255, 255, 255, 255),
+              onPrimary: Colors.white,
               onSurface: Colors.white,
             ),
             dialogBackgroundColor: const Color(0xFF204166),
@@ -203,6 +198,9 @@ class _formPageState extends State<formPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: const Color(0xffF5F5F5),
       body:
@@ -213,42 +211,37 @@ class _formPageState extends State<formPage> {
                   children: [
                     Container(
                       color: const Color(0xffF5F5F5),
-                      padding: const EdgeInsets.only(
-                        top: 40,
-                        left: 20,
-                        right: 20,
-                        bottom: 30,
-                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.05,
+                        vertical: screenHeight * 0.02,
+                      ).copyWith(top: screenHeight * 0.05),
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              SizedBox(
-                                height: 30,
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: <Widget>[
-                                    Image.asset(
-                                      'assets/icons/location.png',
-                                      width: 20,
-                                      height: 16,
+                              Row(
+                                children: <Widget>[
+                                  Image.asset(
+                                    'assets/icons/location.png',
+                                    width: 20,
+                                    height: 16,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Pesisir Selatan',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontFamily: 'DMSans',
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF043F89),
                                     ),
-                                    const SizedBox(width: 8),
-                                    const Text(
-                                      'Pesisir Selatan',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontFamily: 'DMSans',
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF043F89),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
+                              const SizedBox(height: 4),
                               Text(
                                 _tanggal,
                                 style: const TextStyle(
@@ -262,51 +255,70 @@ class _formPageState extends State<formPage> {
                           ),
                           Container(
                             height: 60,
-                            width: 160,
+                            width: screenWidth * 0.45,
                             padding: const EdgeInsets.only(left: 20),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFF204166), Color(0xFF14438B)],
-                                stops: [0.2, 1.0],
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                               ),
                               borderRadius: BorderRadius.circular(35),
                             ),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
                               children: <Widget>[
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text(
-                                      _firstName,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontFamily: 'DMSans',
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text(
+                                        _firstName,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontFamily: 'DMSans',
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    const Text(
-                                      "Warga Lokal",
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontFamily: 'DMSans',
-                                        fontWeight: FontWeight.w200,
-                                        color: Colors.white,
+                                      const SizedBox(height: 4),
+                                      const Text(
+                                        "Warga Lokal",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontFamily: 'DMSans',
+                                          fontWeight: FontWeight.w200,
+                                          color: Colors.white,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                Expanded(child: Container()),
-                                const CircleAvatar(
-                                  radius: 30,
-                                  backgroundImage: AssetImage(
-                                    'assets/icons/user.png',
+                                    ],
                                   ),
+                                ),
+                                LayoutBuilder(
+                                  builder: (
+                                    BuildContext context,
+                                    BoxConstraints constraints,
+                                  ) {
+                                    double radius =
+                                        constraints.biggest.shortestSide / 2;
+
+                                    return CircleAvatar(
+                                      radius: radius,
+                                      backgroundImage: const AssetImage(
+                                        'assets/icons/user.png',
+                                      ),
+                                      onBackgroundImageError: (
+                                        exception,
+                                        stackTrace,
+                                      ) {
+                                        print(
+                                          'Error loading image: $exception',
+                                        );
+                                      },
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -322,9 +334,9 @@ class _formPageState extends State<formPage> {
                           topRight: Radius.circular(50),
                         ),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 30,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.05,
+                        vertical: screenHeight * 0.03,
                       ),
                       child: Form(
                         key: _formKey,
@@ -333,33 +345,25 @@ class _formPageState extends State<formPage> {
                           children: <Widget>[
                             Row(
                               children: <Widget>[
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    padding: EdgeInsets.zero,
-                                    elevation: 0,
-                                  ),
-                                  onPressed: () => Navigator.pop(context),
-                                  child: Image.asset(
-                                    'assets/icons/back.png',
-                                    width: 40,
-                                    height: 40,
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.arrow_back,
                                     color: Colors.white,
                                   ),
+                                  onPressed: () => Navigator.pop(context),
                                 ),
                               ],
                             ),
-                            const Text(
+                            Text(
                               "Formulir Pengaduan DBD",
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: screenWidth * 0.055,
                                 fontFamily: 'DMSans',
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            SizedBox(height: screenHeight * 0.02),
                             _buildFormItem(
                               label: 'Nama Penderita',
                               controller: _namaController,
@@ -368,6 +372,7 @@ class _formPageState extends State<formPage> {
                                       value!.isEmpty
                                           ? 'Nama tidak boleh kosong.'
                                           : null,
+                              screenWidth: screenWidth,
                             ),
                             _buildFormItem(
                               label: 'NIK Penderita',
@@ -377,8 +382,9 @@ class _formPageState extends State<formPage> {
                                       value!.isEmpty
                                           ? 'NIK tidak boleh kosong.'
                                           : null,
+                              screenWidth: screenWidth,
                             ),
-                            _buildGenderSelector(),
+                            _buildGenderSelector(screenWidth),
                             _buildFormItem(
                               label: 'Tanggal Lahir',
                               controller: _tanggalLahirController,
@@ -388,8 +394,9 @@ class _formPageState extends State<formPage> {
                                       value!.isEmpty
                                           ? 'Tanggal lahir tidak boleh kosong.'
                                           : null,
+                              screenWidth: screenWidth,
                             ),
-                            _buildAlamatDropdown(),
+                            _buildAlamatDropdown(screenWidth),
                             _buildFormItem(
                               label: 'Tanggal Mulai Sakit',
                               controller: _tanggalSakitController,
@@ -399,6 +406,7 @@ class _formPageState extends State<formPage> {
                                       value!.isEmpty
                                           ? 'Tanggal mulai sakit tidak boleh kosong.'
                                           : null,
+                              screenWidth: screenWidth,
                             ),
                             _buildFormItem(
                               label: 'Keluhan',
@@ -409,14 +417,18 @@ class _formPageState extends State<formPage> {
                                       value!.isEmpty
                                           ? 'Keluhan tidak boleh kosong.'
                                           : null,
+                              screenWidth: screenWidth,
                             ),
-                            const SizedBox(height: 20),
+                            SizedBox(height: screenHeight * 0.03),
                             ElevatedButton(
                               onPressed: _submitFormToFirestore,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: const Color(0xFF052659),
-                                minimumSize: const Size(double.infinity, 50),
+                                minimumSize: Size(
+                                  double.infinity,
+                                  screenHeight * 0.06,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -439,6 +451,7 @@ class _formPageState extends State<formPage> {
   Widget _buildFormItem({
     required String label,
     required TextEditingController controller,
+    required double screenWidth,
     int maxLines = 1,
     bool isDatePicker = false,
     String? Function(String?)? validator,
@@ -450,32 +463,20 @@ class _formPageState extends State<formPage> {
         children: [
           Expanded(
             flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontFamily: 'DMSans',
-                    fontWeight: FontWeight.w400,
-                  ),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontFamily: 'DMSans',
+                  fontWeight: FontWeight.w400,
                 ),
-                if (label == 'Nama Penderita')
-                  const Text(
-                    "*Wajib diisi",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontFamily: 'DMSans',
-                      fontWeight: FontWeight.w300,
-                      color: Colors.white,
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: screenWidth * 0.04),
           Expanded(
             flex: 3,
             child: Container(
@@ -515,7 +516,7 @@ class _formPageState extends State<formPage> {
     );
   }
 
-  Widget _buildAlamatDropdown() {
+  Widget _buildAlamatDropdown(double screenWidth) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -523,28 +524,27 @@ class _formPageState extends State<formPage> {
         children: [
           const Expanded(
             flex: 2,
-            child: Text(
-              'Alamat',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontFamily: 'DMSans',
-                fontWeight: FontWeight.w400,
+            child: Padding(
+              padding: EdgeInsets.only(top: 8.0),
+              child: Text(
+                'Alamat',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontFamily: 'DMSans',
+                  fontWeight: FontWeight.w400,
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: screenWidth * 0.04),
           Expanded(
             flex: 3,
-            child: // --- PERUBAHAN: Bungkus dengan Theme untuk styling menu ---
-                Theme(
+            child: Theme(
               data: Theme.of(context).copyWith(
-                // Atur tema untuk menu popup
                 popupMenuTheme: PopupMenuThemeData(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      10.0,
-                    ), // Atur radius menu di sini
+                    borderRadius: BorderRadius.circular(10.0),
                   ),
                 ),
               ),
@@ -557,24 +557,17 @@ class _formPageState extends State<formPage> {
                 ),
                 dropdownColor: const Color(0xFF204166),
                 iconEnabledColor: Colors.white54,
-                style: const TextStyle(color: Colors.white),
-
-                // --- PERUBAHAN: Modifikasi decoration untuk border radius kolom input ---
+                style: const TextStyle(color: Colors.white, fontSize: 16),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: const Color(
-                    0xFF204166,
-                  ), // Pastikan ada warna latar
+                  fillColor: const Color(0xFF204166),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 15,
                   ),
-                  // Gunakan OutlineInputBorder untuk mengatur border radius
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      10.0,
-                    ), // Atur radius kolom di sini
-                    borderSide: BorderSide.none, // Sembunyikan garis border
+                    borderRadius: BorderRadius.circular(10.0),
+                    borderSide: BorderSide.none,
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.0),
@@ -585,10 +578,9 @@ class _formPageState extends State<formPage> {
                     borderSide: const BorderSide(
                       color: Color(0xff4694FF),
                       width: 2,
-                    ), // Efek saat aktif
+                    ),
                   ),
                 ),
-
                 items:
                     _alamatOptions.map((String value) {
                       return DropdownMenuItem<String>(
@@ -612,27 +604,35 @@ class _formPageState extends State<formPage> {
     );
   }
 
-  Widget _buildGenderSelector() {
+  Widget _buildGenderSelector(double screenWidth) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text(
-            'Jenis Kelamin',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontFamily: 'DMSans',
-              fontWeight: FontWeight.w400,
+          const Expanded(
+            flex: 2,
+            child: Text(
+              'Jenis Kelamin',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontFamily: 'DMSans',
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildGenderRadio(Gender.lakiLaki, 'Laki-laki'),
-              _buildGenderRadio(Gender.perempuan, 'Perempuan'),
-            ],
+          SizedBox(width: screenWidth * 0.04),
+          Expanded(
+            flex: 3,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                _buildGenderRadio(Gender.lakiLaki, 'Laki-laki'),
+                const SizedBox(width: 2),
+                _buildGenderRadio(Gender.perempuan, 'Perempuan'),
+              ],
+            ),
           ),
         ],
       ),
@@ -654,6 +654,7 @@ class _formPageState extends State<formPage> {
               });
             },
             activeColor: Colors.white,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ),
         Text(title, style: const TextStyle(color: Colors.white)),

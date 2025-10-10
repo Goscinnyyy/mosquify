@@ -18,13 +18,16 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
   String? _selectedAddress;
+  bool _isLoading = false;
 
   final List<String> _addressOptions = ['Kambang', 'Tapan'];
 
-  // GANTI FUNGSI _register() ANDA DENGAN YANG INI
-
   Future<void> _register() async {
-    // Tambahkan validasi sederhana sebelum mencoba mendaftar
+    if (_isLoading) return;
+    setState(() {
+      _isLoading = true;
+    });
+
     if (_emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
         _firstNameController.text.isEmpty ||
@@ -32,15 +35,18 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Harap isi semua kolom yang wajib.")),
       );
-      return; // Hentikan fungsi jika ada yang kosong
+      setState(() {
+        _isLoading = false;
+      });
+      return;
     }
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
 
       String? userId = userCredential.user?.uid;
 
@@ -54,17 +60,10 @@ class _RegisterPageState extends State<RegisterPage> {
         });
       }
 
-      // ===============================================
-      // === BAGIAN INI YANG DIUBAH (DARI SNACKBAR KE POP-UP) ===
-      // ===============================================
-
-      // Pastikan widget masih ada di tree sebelum menampilkan dialog
       if (!mounted) return;
-
-      // Tampilkan pop-up dialog
       showDialog(
         context: context,
-        barrierDismissible: false, // User harus menekan tombol untuk menutup
+        barrierDismissible: false,
         builder: (BuildContext context) {
           return AlertDialog(
             shape: RoundedRectangleBorder(
@@ -72,19 +71,15 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             title: const Text("Pendaftaran Berhasil"),
             content: const Text(
-              "Akun Anda telah berhasil dibuat. Silakan masuk untuk melanjutkan.",
-            ),
+                "Akun Anda telah berhasil dibuat. Silakan masuk untuk melanjutkan."),
             actions: <Widget>[
               TextButton(
                 child: const Text(
                   "Masuk Sekarang",
                   style: TextStyle(
-                    color: Color(0xFF052659), // Warna sesuai tombol Anda
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: Color(0xFF052659), fontWeight: FontWeight.bold),
                 ),
                 onPressed: () {
-                  // Pindahkan navigasi ke sini
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (context) => const LoginPage()),
                     (Route<dynamic> route) => false,
@@ -104,14 +99,16 @@ class _RegisterPageState extends State<RegisterPage> {
       } else if (e.code == 'invalid-email') {
         message = "Format email tidak valid.";
       }
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Terjadi kesalahan.")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Terjadi kesalahan.")));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -119,140 +116,65 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
-            /// Bagian wave logo
             ClipPath(
               clipper: WaveClipper(),
               child: Container(
-                height: 0.35 * screenHeight,
+                padding: EdgeInsets.only(bottom: screenHeight * 0.05),
+                height: screenHeight * 0.35,
                 color: const Color(0xFF0A2E63),
                 alignment: Alignment.center,
                 child: Image.asset(
                   'assets/icons/mosq.png',
-                  width: screenWidth * 0.4,
-                  height: screenHeight * 0.25,
+                  width: screenWidth * 0.41,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-
-            /// Judul
-            Container(
-              padding: const EdgeInsets.only(left: 30),
-              alignment: Alignment.centerLeft,
-              child: const Text(
-                "Register",
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'DMSans',
-                  color: Colors.black,
-                ),
-              ),
-            ),
-
-            /// Form Email & Password
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Email",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  TextField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      hintText: 'Masukkan Email',
-                      hintStyle: const TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'DMSans',
-                      ),
-                      filled: true,
-                      fillColor: const Color(0x5CD9D9D9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
+                  Text(
+                    "Register",
+                    style: TextStyle(
+                      fontSize: screenWidth * 0.09,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'DMSans',
                     ),
                   ),
-                  const SizedBox(height: 15),
-
-                  const Text(
-                    "Nama Depan",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  TextField(
-                    controller: _firstNameController,
-                    decoration: InputDecoration(
-                      hintText: 'Masukkan Nama Depan',
-                      hintStyle: const TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'DMSans',
-                      ),
-                      filled: true,
-                      fillColor: const Color(0x5CD9D9D9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-
-                  const Text(
-                    "Nama Belakang",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  TextField(
-                    controller: _lastNameController,
-                    decoration: InputDecoration(
-                      hintText: 'Masukkan Nama Belakang',
-                      hintStyle: const TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'DMSans',
-                      ),
-                      filled: true,
-                      fillColor: const Color(0x5CD9D9D9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  const Text(
-                    "Nomor Handphone",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  TextField(
-                    controller: _phoneNumberController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      hintText: 'Masukkan Nomor Handphone',
-                      hintStyle: const TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'DMSans',
-                      ),
-                      filled: true,
-                      fillColor: const Color(0x5CD9D9D9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  const Text(
-                    "Tempat Tinggal",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-
-                  // DropdownSearch dengan itemBuilder untuk tampilan yang lebih bagus
+                  SizedBox(height: screenHeight * 0.02),
+                  _buildTextField(
+                      controller: _emailController,
+                      label: "Email",
+                      hint: "Masukkan Email",
+                      keyboardType: TextInputType.emailAddress),
+                  SizedBox(height: screenHeight * 0.02),
+                  _buildTextField(
+                      controller: _firstNameController,
+                      label: "Nama Depan",
+                      hint: "Masukkan Nama Depan"),
+                  SizedBox(height: screenHeight * 0.02),
+                  _buildTextField(
+                      controller: _lastNameController,
+                      label: "Nama Belakang",
+                      hint: "Masukkan Nama Belakang"),
+                  SizedBox(height: screenHeight * 0.02),
+                  _buildTextField(
+                      controller: _phoneNumberController,
+                      label: "Nomor Handphone",
+                      hint: "Masukkan Nomor Handphone",
+                      keyboardType: TextInputType.phone),
+                  SizedBox(height: screenHeight * 0.02),
+                  const Text("Tempat Tinggal",
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  SizedBox(height: screenHeight * 0.01),
                   DropdownSearch<String>(
                     items: _addressOptions,
                     selectedItem: _selectedAddress,
@@ -261,129 +183,77 @@ class _RegisterPageState extends State<RegisterPage> {
                         _selectedAddress = newValue;
                       });
                     },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Silakan pilih tempat tinggal';
-                      }
-                      return null;
-                    },
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Pilih tempat tinggal' : null,
                     dropdownDecoratorProps: DropDownDecoratorProps(
                       dropdownSearchDecoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 15,
-                        ),
+                            horizontal: 20, vertical: 15),
                         hintText: "Pilih tempat tinggal...",
                         hintStyle: const TextStyle(
-                          fontSize: 14,
-                          fontFamily: 'DMSans',
-                        ),
+                            fontSize: 14, fontFamily: 'DMSans'),
                         filled: true,
                         fillColor: const Color(0x5CD9D9D9),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(25),
                           borderSide: BorderSide.none,
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF0A2E63),
-                            width: 2,
-                          ),
-                        ),
                       ),
                     ),
                     popupProps: PopupProps.menu(
-                      fit: FlexFit.loose, // jangan full width
-                      constraints: const BoxConstraints(
-                        minWidth: 0,
-                        maxWidth: 200, // atur sesuai kebutuhan isi
-                      ),
+                      fit: FlexFit.loose,
+                      constraints: BoxConstraints(maxWidth: screenWidth * 0.8),
                       showSelectedItems: true,
                       menuProps: const MenuProps(
                         elevation: 8,
                         borderRadius: BorderRadius.all(Radius.circular(15)),
                       ),
-                      itemBuilder: (context, item, isSelected) {
-                        return ListTile(
-                          title: Text(item),
-                          leading: const Icon(Icons.location_on),
-                          selected: isSelected,
-                          selectedColor: const Color(0xFF0A2E63),
-                          onTap: () {
-                            Navigator.pop(context, item);
-                          },
-                        );
-                      },
                     ),
                   ),
-                  const SizedBox(height: 15),
-                  const Text(
-                    "Password",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      hintText: 'Masukkan kata sandi',
-                      hintStyle: const TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'DMSans',
-                      ),
-                      filled: true,
-                      fillColor: const Color(0x5CD9D9D9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  /// Button Register
+                  SizedBox(height: screenHeight * 0.02),
+                  _buildTextField(
+                      controller: _passwordController,
+                      label: "Password",
+                      hint: "Masukkan kata sandi",
+                      isPassword: true),
+                  SizedBox(height: screenHeight * 0.03),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: screenHeight * 0.06,
                     child: ElevatedButton(
-                      onPressed: _register,
+                      onPressed: _isLoading ? null : _register,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF052659),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
-                        'DAFTAR',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                              'DAFTAR',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: screenHeight * 0.01),
                   Center(
                     child: TextButton(
                       onPressed: () {
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
-                            builder: (context) => const LoginPage(),
-                          ),
+                              builder: (context) => const LoginPage()),
                         );
                       },
                       child: const Text(
                         "Sudah Punya akun? Masuk Disini",
                         style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xff4694FF),
-                        ),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xff4694FF)),
                       ),
                     ),
                   ),
@@ -395,9 +265,40 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
     );
   }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
+    bool isPassword = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: isPassword,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(fontSize: 14, fontFamily: 'DMSans'),
+            filled: true,
+            fillColor: const Color(0x5CD9D9D9),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(25),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-/// Wave clipper
 class WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -405,21 +306,13 @@ class WaveClipper extends CustomClipper<Path> {
     path.lineTo(0, size.height - 50);
     var firstControlPoint = Offset(size.width / 4, size.height - 100);
     var firstEndPoint = Offset(size.width / 2, size.height - 50);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
-    );
+    path.quadraticBezierTo(firstControlPoint.dx, firstControlPoint.dy,
+        firstEndPoint.dx, firstEndPoint.dy);
 
     var secondControlPoint = Offset(size.width * 3 / 4, size.height);
     var secondEndPoint = Offset(size.width, size.height - 50);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
+    path.quadraticBezierTo(secondControlPoint.dx, secondControlPoint.dy,
+        secondEndPoint.dx, secondEndPoint.dy);
 
     path.lineTo(size.width, 0);
     path.close();

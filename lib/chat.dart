@@ -12,11 +12,8 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  // Variabel untuk menyimpan data pengguna yang akan ditampilkan
-  String _firstName = ''; // Changed: First name variable
-
+  String _firstName = '';
   String _tanggal = "";
-
   bool _isLoading = true;
 
   @override
@@ -61,37 +58,34 @@ class _ChatPageState extends State<ChatPage> {
       final docRef = FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid);
-
       try {
         final doc = await docRef.get();
         final data = doc.data();
 
         if (doc.exists && data != null && data.isNotEmpty) {
           setState(() {
-            _firstName =
-                data['firstName'] ??
-                ''; // Changed: Get first name from Firestore
+            _firstName = data['firstName'] ?? '';
           });
         } else {
-          // Jika dokumen tidak ada, buat dokumen baru dengan data awal.
-          // Split user's displayName into first and last names if available.
           String? displayName = user.displayName;
           String fName = '';
-          await docRef.set({
-            'firstName': fName, // Changed: Save first name
-          });
+          if (displayName != null && displayName.isNotEmpty) {
+            fName = displayName.split(' ').first;
+          }
+          await docRef.set({'firstName': fName});
           setState(() {
-            _firstName = fName; // Changed: Set first name
+            _firstName = fName;
           });
         }
       } catch (e) {
         print('Error loading user data: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal memuat data pengguna.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gagal memuat data pengguna.')),
+          );
+        }
       }
     }
-
     setState(() {
       _isLoading = false;
     });
@@ -99,293 +93,282 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      body: Container(
-        color: Color(0xFFF5f5f5),
-        padding: const EdgeInsets.only(top: 40, left: 20, right: 20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Container(
+                height: screenHeight,
+                color: const Color(0xFFF5f5f5),
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.05,
+                ).copyWith(top: screenHeight * 0.05),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: <Widget>[
-                    SizedBox(
-                      height: 30,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: <Widget>[
-                          Image.asset(
-                            'assets/icons/location.png',
-                            width: 20,
-                            height: 16,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            SizedBox(
+                              height: 30,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: <Widget>[
+                                  Image.asset(
+                                    'assets/icons/location.png',
+                                    width: 20,
+                                    height: 16,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    "Pesisir Selatan",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontFamily: 'DMSans',
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF043F89),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              _tanggal,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontFamily: 'DMSans',
+                                fontWeight: FontWeight.w300,
+                                color: Color(0xFF011023),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          height: 60,
+                          width: screenWidth * 0.45,
+                          padding: const EdgeInsets.only(left: 20),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF204166), Color(0xFF14438B)],
+                              stops: [0.2, 1.0],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(35),
                           ),
-                          const SizedBox(width: 8),
+                          child: Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(
+                                      _firstName,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontFamily: 'DMSans',
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      "Warga Lokal",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontFamily: 'DMSans',
+                                        fontWeight: FontWeight.w200,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              LayoutBuilder(
+                                builder: (
+                                  BuildContext context,
+                                  BoxConstraints constraints,
+                                ) {
+                                  double radius =
+                                      constraints.biggest.shortestSide / 2;
+
+                                  return CircleAvatar(
+                                    radius: radius,
+                                    backgroundImage: const AssetImage(
+                                      'assets/icons/user.png',
+                                    ),
+                                    onBackgroundImageError: (
+                                      exception,
+                                      stackTrace,
+                                    ) {
+                                      print('Error loading image: $exception');
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      width: screenWidth,
+                      margin: EdgeInsets.only(top: screenHeight * 0.05),
+                      padding: const EdgeInsets.only(left: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
                           Text(
-                            "Pesisir Selatan", // Menggunakan _userLocation
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontFamily: 'DMSans',
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF043F89),
+                            "Hello,",
+                            style: TextStyle(
+                              fontFamily: 'OpenSans',
+                              fontSize: screenWidth * 0.08,
+                              fontWeight: FontWeight.w400,
+                              color: const Color(0xff000000),
+                            ),
+                          ),
+                          Text(
+                            _firstName.isNotEmpty ? _firstName : "User",
+                            style: TextStyle(
+                              fontFamily: 'OpenSans',
+                              fontSize: screenWidth * 0.1,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xff553AE3),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Text(
-                      _tanggal,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontFamily: 'DMSans',
-                        fontWeight: FontWeight.w300,
-                        color: Color(0xFF011023),
+                    const Spacer(), 
+                    Container(
+                      padding: const EdgeInsets.only(left: 10),
+                      width: screenWidth,
+                      child: const Text(
+                        "Silahkan pilih topik yang kamu mau!",
+                        style: TextStyle(
+                          fontFamily: 'OpenSans',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(top: 20, bottom: 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          SizedBox(
+                            width: screenWidth * 0.4,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ChatBotPage(),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF000000),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: screenHeight * 0.02,
+                                ),
+                                elevation: 8,
+                                shadowColor: Colors.black.withOpacity(0.05),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                              ),
+                              child: Column(
+                                children: <Widget>[
+                                  Image.asset(
+                                    'assets/images/bot_big.png',
+                                    width: screenWidth * 0.15,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    "Chat dengan",
+                                    style: TextStyle(
+                                      fontFamily: 'OpenSans',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400,
+                                      color: Color(0xFF000000),
+                                    ),
+                                  ),
+                                  Text(
+                                    "Chatbot",
+                                    style: TextStyle(
+                                      fontFamily: 'OpenSans',
+                                      fontSize: screenWidth * 0.05,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xff052659),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: screenWidth * 0.4,
+                            child: ElevatedButton(
+                              onPressed: () {},
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF000000),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: screenHeight * 0.02,
+                                ),
+                                elevation: 8,
+                                shadowColor: Colors.black.withOpacity(0.05),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                              ),
+                              child: Column(
+                                children: <Widget>[
+                                  Image.asset(
+                                    'assets/images/nakes.png',
+                                    width: screenWidth * 0.15,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    "Chat dengan",
+                                    style: TextStyle(
+                                      fontFamily: 'OpenSans',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400,
+                                      color: Color(0xFF000000),
+                                    ),
+                                  ),
+                                  Text(
+                                    "Nakes",
+                                    style: TextStyle(
+                                      fontFamily: 'OpenSans',
+                                      fontSize: screenWidth * 0.05,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xff052659),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                Container(
-                  height: 60,
-                  width: 160,
-                  padding: const EdgeInsets.only(left: 20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF204166), Color(0xFF14438B)],
-                      stops: [0.2, 1.0],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    borderRadius: BorderRadius.circular(35),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            _firstName,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontFamily: 'DMSans',
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            "Warga Lokal",
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontFamily: 'DMSans',
-                              fontWeight: FontWeight.w200,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Expanded(child: SizedBox()),
-                      const CircleAvatar(
-                        radius: 30,
-                        backgroundImage: AssetImage('assets/icons/user.png'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              width: screenWidth,
-              margin: EdgeInsets.only(top: 70),
-              padding: EdgeInsets.only(left: 20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "Hello,",
-                    style: TextStyle(
-                      fontFamily: 'OpenSans',
-                      fontSize: 32,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xff000000),
-                    ),
-                  ),
-                  Text(
-                    _firstName,
-                    style: TextStyle(
-                      fontFamily: 'OpenSans',
-                      fontSize: 40,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xff553AE3),
-                    ),
-                  ),
-                ],
               ),
-            ),
-            SizedBox(height: 240),
-            Container(
-              padding: EdgeInsets.only(left: 10),
-              width: screenWidth,
-              child: Text(
-                "Silahkan pilih topik yang kamu mau!",
-                style: TextStyle(
-                  fontFamily: 'OpenSans',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            Container(
-              margin: EdgeInsets.only(top: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  SizedBox(
-                    // Kita gunakan SizedBox untuk mengatur lebar tombol
-                    width: 0.43 * screenWidth,
-                    child: ElevatedButton(
-                      // Aksi yang dijalankan ketika tombol ditekan. WAJIB ADA.
-                      onPressed: () {
-                        // Tambahkan logika Anda di sini, misalnya:
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ChatBotPage(),
-                          ),
-                        );
-                      },
-
-                      // Properti 'style' digunakan untuk menggantikan 'decoration' pada Container
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white, // Menggantikan color
-                        foregroundColor: Color(
-                          0xFF000000,
-                        ), // Warna untuk splash effect & teks default
-                        padding: EdgeInsets.all(20), // Menggantikan padding
-                        elevation:
-                            8, // Menggantikan BoxShadow untuk efek terangkat
-                        shadowColor: Colors.black.withOpacity(
-                          0.05,
-                        ), // Warna bayangan
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            50,
-                          ), // Menggantikan borderRadius
-                        ),
-                      ),
-
-                      // 'child' dari Container dipindahkan langsung ke sini
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Center(
-                            child: Image.asset(
-                              'assets/images/bot_big.png',
-                              width: 60,
-                            ),
-                          ),
-                          SizedBox(height: 8), // Memberi sedikit jarak
-                          Text(
-                            "Chat dengan",
-                            style: TextStyle(
-                              fontFamily: 'OpenSans',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFF000000),
-                            ),
-                          ),
-                          Center(
-                            child: Text(
-                              "Chatbot",
-                              style: TextStyle(
-                                fontFamily: 'OpenSans',
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xff052659),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    // Kita gunakan SizedBox untuk mengatur lebar tombol
-                    width: 0.43 * screenWidth,
-                    child: ElevatedButton(
-                      // Aksi yang dijalankan ketika tombol ditekan. WAJIB ADA.
-                      onPressed: () {
-                        // Tambahkan logika Anda di sini, misalnya:
-                      },
-
-                      // Properti 'style' digunakan untuk menggantikan 'decoration' pada Container
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white, // Menggantikan color
-                        foregroundColor: Color(
-                          0xFF000000,
-                        ), // Warna untuk splash effect & teks default
-                        padding: EdgeInsets.all(20), // Menggantikan padding
-                        elevation:
-                            8, // Menggantikan BoxShadow untuk efek terangkat
-                        shadowColor: Colors.black.withOpacity(
-                          0.05,
-                        ), // Warna bayangan
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            50,
-                          ), // Menggantikan borderRadius
-                        ),
-                      ),
-
-                      // 'child' dari Container dipindahkan langsung ke sini
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Center(
-                            child: Image.asset(
-                              'assets/images/nakes.png',
-                              width: 60,
-                            ),
-                          ),
-                          SizedBox(height: 8), // Memberi sedikit jarak
-                          Text(
-                            "Chat dengan",
-                            style: TextStyle(
-                              fontFamily: 'OpenSans',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFF000000),
-                            ),
-                          ),
-                          Center(
-                            child: Text(
-                              "Nakes",
-                              style: TextStyle(
-                                fontFamily: 'OpenSans',
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xff052659),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

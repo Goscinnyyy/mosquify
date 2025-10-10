@@ -80,7 +80,7 @@ class _MainPageState extends State<MainPage> {
         onPressed: () {
           // TODO: aksi tombol tengah
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const formPage()),
+          MaterialPageRoute(builder: (context) => const FormPage()),
         );
       },
         backgroundColor: const Color(0xFF052659),

@@ -3,7 +3,6 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Class untuk menampung data pesan
 class Message {
   final String text;
   final bool isUser;
@@ -11,35 +10,21 @@ class Message {
   Message({required this.text, required this.isUser});
 }
 
-class ChatBotPage extends StatelessWidget {
+class ChatBotPage extends StatefulWidget {
   const ChatBotPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ChatScreen(),
-    );
-  }
+  _ChatBotPageState createState() => _ChatBotPageState();
 }
 
-class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
-
-  @override
-  _ChatScreenState createState() => _ChatScreenState();
-}
-
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatBotPageState extends State<ChatBotPage> {
   final TextEditingController _textController = TextEditingController();
   final List<Message> _messages = [];
   bool _isLoading = false;
   String _tanggal = "";
   String _firstName = '';
-  bool _isLoading_name = true;
+  bool _isLoadingName = true;
 
-  // ⚠️ PENTING: Ganti dengan API Key Anda yang sebenarnya.
-  // Sebaiknya gunakan environment variables untuk keamanan.
   static const _apiKey = 'AIzaSyCQbtAb6LVVUkh1Gi-i7CIpfmoWfeGfK5w';
 
   late final ChatSession _chat;
@@ -101,7 +86,7 @@ class _ChatScreenState extends State<ChatScreen> {
             _firstName = data['firstName'] ?? 'Warga';
           });
         } else {
-          String fName = 'Warga';
+          const fName = 'Warga';
           await docRef.set({'firstName': fName});
           setState(() {
             _firstName = fName;
@@ -127,7 +112,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     }
     setState(() {
-      _isLoading_name = false;
+      _isLoadingName = false;
     });
   }
 
@@ -171,33 +156,19 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  Widget _buildMessageBubble(Message message) {
-    // Mendefinisikan widget untuk ikon user dan bot
-    final userIcon = Container(
-      width: 20,
-      height: 20,
-      color: Color(0xfff5f5f5), // Warna latar belakang jika gambar tidak ada
-
-      child: Image.asset(
-        'assets/icons/user.png', // Ganti dengan path gambar Anda
-        fit: BoxFit.contain, // Membuat gambar mengisi penuh lingkaran
-      ),
+  Widget _buildMessageBubble(Message message, double screenWidth) {
+    final userIcon = Image.asset(
+      'assets/icons/user.png',
+      width: 30,
+      height: 30,
     );
+    final botIcon = Image.asset('assets/icons/bot.png', width: 30, height: 30);
 
-    final botIcon = Container(
-      width: 20,
-      height: 20,
-      color: Color(0xfff5f5f5), // Warna latar belakang jika gambar tidak ada
-
-      child: Image.asset(
-        'assets/icons/bot.png', // Ganti dengan path gambar Anda
-        fit: BoxFit.contain, // Membuat gambar mengisi penuh lingkaran
-      ),
-    );
-
-    // Menggunakan Row untuk menyusun ikon dan gelembung pesan
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16.0),
+      margin: EdgeInsets.symmetric(
+        vertical: 6.0,
+        horizontal: screenWidth * 0.04,
+      ),
       child: Row(
         mainAxisAlignment:
             message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -205,13 +176,11 @@ class _ChatScreenState extends State<ChatScreen> {
         children:
             message.isUser
                 ? [
-                  // Pesan User: Gelembung di kiri, ikon di kanan
                   Flexible(child: _buildBubbleContent(message)),
                   const SizedBox(width: 8),
                   userIcon,
                 ]
                 : [
-                  // Pesan Bot: Ikon di kiri, gelembung di kanan
                   botIcon,
                   const SizedBox(width: 8),
                   Flexible(child: _buildBubbleContent(message)),
@@ -220,7 +189,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // Widget terpisah untuk konten gelembung agar kode lebih rapi
   Widget _buildBubbleContent(Message message) {
     final color = message.isUser ? const Color(0xff052659) : Colors.white;
     final textColor = message.isUser ? Colors.white : Colors.black87;
@@ -240,68 +208,61 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      // resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFF5F5F5),
-      body: Container(
-        padding: const EdgeInsets.only(
-          top: 40,
-          left: 20,
-          right: 20,
-          bottom: 20,
-        ),
-        child: Column(
-          children: <Widget>[
-            _buildHeader(),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                reverse: true,
-                itemCount: _messages.length,
-                itemBuilder: (context, index) {
-                  return _buildMessageBubble(_messages[index]);
-                },
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: screenWidth * 0.05,
+          ).copyWith(bottom: 10),
+          child: Column(
+            children: <Widget>[
+              _buildHeader(screenWidth),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  reverse: true,
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    return _buildMessageBubble(_messages[index], screenWidth);
+                  },
+                ),
               ),
-            ),
-            _buildTextComposer(),
-          ],
+              _buildTextComposer(screenWidth),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    // Tidak ada perubahan pada widget _buildHeader
+  Widget _buildHeader(double screenWidth) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
         Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            SizedBox(
-              height: 30,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Image.asset(
-                    'assets/icons/location.png',
-                    width: 20,
-                    height: 16,
+            Row(
+              children: <Widget>[
+                Image.asset('assets/icons/location.png', width: 20, height: 16),
+                const SizedBox(width: 8),
+                const Text(
+                  'Pesisir Selatan',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontFamily: 'DMSans',
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF043F89),
                   ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Pesisir Selatan',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontFamily: 'DMSans',
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF043F89),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+            const SizedBox(height: 4),
             Text(
               _tanggal,
               style: const TextStyle(
@@ -315,49 +276,58 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         Container(
           height: 60,
-          width: 160,
+          width: screenWidth * 0.45,
           padding: const EdgeInsets.only(left: 20),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF204166), Color(0xFF14438B)],
-              stops: [0.2, 1.0],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
             borderRadius: BorderRadius.circular(35),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    _firstName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontFamily: 'DMSans',
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      _isLoadingName ? 'Loading...' : _firstName,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontFamily: 'DMSans',
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    "Warga Lokal",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontFamily: 'DMSans',
-                      fontWeight: FontWeight.w200,
-                      color: Colors.white,
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Warga Lokal",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'DMSans',
+                        fontWeight: FontWeight.w200,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              Expanded(child: Container()),
-              const CircleAvatar(
-                radius: 30,
-                backgroundImage: AssetImage('assets/icons/user.png'),
+              LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  double radius = constraints.biggest.shortestSide / 2;
+
+                  return CircleAvatar(
+                    radius: radius,
+                    backgroundImage: const AssetImage('assets/icons/user.png'),
+                    onBackgroundImageError: (exception, stackTrace) {
+                      print('Error loading image: $exception');
+                    },
+                  );
+                },
               ),
             ],
           ),
@@ -366,10 +336,13 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildTextComposer() {
+  Widget _buildTextComposer(double screenWidth) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.04,
+        vertical: 4.0,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(30.0),
@@ -384,7 +357,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       child: Row(
         children: <Widget>[
-          Flexible(
+          Expanded(
             child: TextField(
               controller: _textController,
               onSubmitted: _isLoading ? null : _handleSubmitted,

@@ -10,12 +10,17 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  bool _isChecked = false; // state untuk checkbox
+  bool _isChecked = false;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
 
-  // Fungsi login Firebase
   Future<void> _login() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
@@ -27,28 +32,38 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // Login dengan Firebase
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Jika login sukses, navigasi ke halaman utama
-      Navigator.of(context).pushReplacementNamed('/main');
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/main');
+      }
     } on FirebaseAuthException catch (e) {
       String message = 'Terjadi kesalahan';
-      if (e.code == 'user-not-found') {
-        message = 'Pengguna tidak ditemukan';
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+        message = 'Email atau password salah.';
       } else if (e.code == 'wrong-password') {
-        message = 'Password salah';
+        message = 'Password salah.';
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Terjadi kesalahan')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Terjadi kesalahan tidak terduga.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -56,15 +71,15 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Bagian atas dengan wave
             ClipPath(
               clipper: WaveClipper(),
               child: Container(
-                height: 0.48 * screenHeight,
+                height: screenHeight * 0.45,
                 color: const Color(0xFF0A2E63),
                 alignment: Alignment.center,
                 child: Column(
@@ -72,14 +87,14 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     Image.asset(
                       'assets/icons/mosq.png',
-                      width: screenWidth * 0.5,
-                      height: screenHeight * 0.3,
+                      width: screenWidth * 0.4,
+                      fit: BoxFit.contain,
                     ),
-                    const Text(
+                    Text(
                       "MOSQUIFY",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 50,
+                        fontSize: screenWidth * 0.12,
                         fontWeight: FontWeight.w700,
                         fontFamily: 'DMSans',
                       ),
@@ -89,39 +104,35 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-            Container(
-              padding: const EdgeInsets.only(left: 30),
-              alignment: Alignment.centerLeft,
-              child: const Text(
-                "Login",
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'DMSans',
-                  color: Colors.black,
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.only(left: 30, right: 30, top: 20),
+            SizedBox(height: screenHeight * 0.03),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Email
-                  Container(
-                    padding: const EdgeInsets.only(left: 20, bottom: 5),
-                    child: const Text(
-                      "Email",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'DMSans',
-                        color: Colors.black,
-                      ),
+                  Text(
+                    "Login",
+                    style: TextStyle(
+                      fontSize: screenWidth * 0.09,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'DMSans',
+                      color: Colors.black,
                     ),
                   ),
+                  SizedBox(height: screenHeight * 0.02),
+                  const Text(
+                    "   Email",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'DMSans',
+                      color: Colors.black,
+                    ),
+                  ),
+                  SizedBox(height: screenHeight * 0.01),
                   TextField(
                     controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
                     style: const TextStyle(fontSize: 14, color: Colors.black),
                     decoration: InputDecoration(
                       hintText: 'Ketik Disini...',
@@ -138,24 +149,17 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-
-                  // Password
-                  Container(
-                    padding: const EdgeInsets.only(
-                      left: 20,
-                      top: 10,
-                      bottom: 5,
-                    ),
-                    child: const Text(
-                      "Password",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'DMSans',
-                        color: Colors.black,
-                      ),
+                  SizedBox(height: screenHeight * 0.02),
+                  const Text(
+                    "   Password",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'DMSans',
+                      color: Colors.black,
                     ),
                   ),
+                  SizedBox(height: screenHeight * 0.01),
                   TextField(
                     controller: _passwordController,
                     obscureText: true,
@@ -176,106 +180,66 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
 
-                  // Forgot password
-                  Container(
-                    margin: const EdgeInsets.only(top: 5, right: 10),
-                    alignment: Alignment.centerRight,
-                    child: const Text(
-                      "Forgot your password?",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w200,
-                        fontFamily: 'DMSans',
-                        color: Color(0x63000000),
-                      ),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Checkbox(
-                        shape: const CircleBorder(),
-                        value: _isChecked,
-                        onChanged: (value) {
-                          setState(() {
-                            _isChecked = value ?? false;
-                          });
-                        },
-                        activeColor: const Color(0xFF052659),
-                        checkColor: Colors.white,
-                        side: const BorderSide(
-                          color: Color(0xFF052659),
-                          width: 2,
-                        ),
-                      ),
-                      const Text(
-                        "Remember me",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF000000),
-                          fontSize: 14,
-                          fontFamily: 'DMSans',
-                        ),
-                      ),
-                    ],
-                  ),
-                  // Button Login
+                  SizedBox(height: screenHeight * 0.05),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: screenHeight * 0.06,
                     child: ElevatedButton(
-                      onPressed: _login, // panggil fungsi login
+                      onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF052659),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                       ),
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontFamily: 'DMSans',
-                        ),
-                      ),
+                      child:
+                          _isLoading
+                              ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                              : const Text(
+                                'Masuk',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontFamily: 'DMSans',
+                                ),
+                              ),
                     ),
                   ),
-                  Container(
-                    margin: const EdgeInsets.only(top: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        const Text(
-                          "Don't have account?",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            fontFamily: 'DMSans',
-                            color: Color(0xFF000000),
-                          ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const Text(
+                        "Belum Punya Akun?",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          fontFamily: 'DMSans',
+                          color: Color(0xFF000000),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const RegisterPage(),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            "Sign Up",
-                            style: TextStyle(
-                              fontFamily: 'DMSans',
-                              fontSize: 14,
-                              color: Color(0xff4694FF),
-                              fontWeight: FontWeight.w700,
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterPage(),
                             ),
+                          );
+                        },
+                        child: const Text(
+                          "Daftar",
+                          style: TextStyle(
+                            fontFamily: 'DMSans',
+                            fontSize: 14,
+                            color: Color(0xff4694FF),
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -287,7 +251,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-/// Clipper untuk wave
 class WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
