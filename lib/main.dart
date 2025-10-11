@@ -1,21 +1,20 @@
 import 'package:bugbusterss/form.dart';
 import 'package:flutter/material.dart';
-
-// Import halaman
 import 'package:bugbusterss/login.dart';
 import 'package:bugbusterss/home.dart';
 import 'package:bugbusterss/chat.dart';
 import 'package:bugbusterss/akun.dart';
 import 'package:bugbusterss/map.dart';
-
-// Firebase
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
-// import 'firebase_options.dart';
+import 'package:flutter/services.dart';
+import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -45,9 +44,9 @@ class MyApp extends StatelessWidget {
             );
           }
           if (snapshot.hasData) {
-            return const MainPage(); // user sudah login
+            return const MainPage(); 
           }
-          return const LoginPage(); // user belum login
+          return const LoginPage(); 
         },
       ),
     );
@@ -61,8 +60,13 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+// GANTI SELURUH CLASS _MainPageState DENGAN INI
+
+// GANTI SELURUH CLASS _MainPageState DENGAN INI
+
+class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   int _currentIndex = 0;
+  Timer? _timer; // Variabel untuk menyimpan timer
 
   final List<Widget> _pages = [
     const HomePage(),
@@ -72,17 +76,47 @@ class _MainPageState extends State<MainPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    _hideSystemUI();
+
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      _hideSystemUI();
+    });
+  }
+
+  void _hideSystemUI() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      _hideSystemUI();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false, // Ditambahkan untuk mengatasi masalah keyboard
+      resizeToAvoidBottomInset: false,
       body: _pages[_currentIndex],
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: aksi tombol tengah
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const FormPage()),
-        );
-      },
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => const FormPage()),
+          );
+        },
         backgroundColor: const Color(0xFF052659),
         shape: const CircleBorder(),
         elevation: 4,
@@ -150,7 +184,7 @@ class PotensiCard {
         badgeBgColor = const Color(0xFFE0F7FA);
         badgeTextColor = const Color(0xFF00796B);
         break;
-      default: // sedang
+      default:
         badgeBgColor = const Color(0xFFFFF4D1);
         badgeTextColor = const Color(0xFFC08D3B);
     }

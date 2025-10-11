@@ -4,7 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'main.dart'; // Make sure you have these other files (main.dart, SensorCard, PotensiCard etc.)
+import 'main.dart';
 
 class MapDetailPage extends StatefulWidget {
   final String locationKey;
@@ -19,7 +19,6 @@ class _MapDetailPageState extends State<MapDetailPage> {
   late final DatabaseReference _databaseRef;
   StreamSubscription<DatabaseEvent>? _dataSubscription;
 
-  // Variabel untuk data sensor
   double _kekeruhanAir = 0.0;
   double _suhuAir = 0.0;
   double _kelembapan = 0.0;
@@ -28,15 +27,18 @@ class _MapDetailPageState extends State<MapDetailPage> {
   double _suhu = 0.0;
   String _potensiBanjir = "Memuat...";
   String _potensiDBD = "Memuat...";
-  String _jumlahPenderitaDBD = "Memuat..."; // This will now be populated from Firestore
+  String _jumlahPenderitaDBD = "Memuat...";
   String _lokasiNama = "Memuat...";
 
   String _firstName = '';
-  // Variabel untuk tanggal & waktu realtime
   String _hari = "";
   String _tanggal = "";
   String _jam = "";
   bool _isLoading = true;
+
+  String _dangerStatusText = "Memuat...";
+  Color _dangerStatusColor = Colors.grey;
+  Color _dangerStatusTextColor = Colors.white;
 
   Timer? _timer;
 
@@ -58,9 +60,8 @@ class _MapDetailPageState extends State<MapDetailPage> {
     super.dispose();
   }
 
-  /// === FUNGSI REALTIME JAM ===
   void _startRealtimeClock() {
-    _updateDateTime(); // update awal
+    _updateDateTime();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateDateTime();
     });
@@ -137,7 +138,8 @@ class _MapDetailPageState extends State<MapDetailPage> {
     });
   }
 
-  String _getAndTranslateStatus(Map<dynamic, dynamic>? potensiBencanaData, String key) {
+  String _getAndTranslateStatus(
+      Map<dynamic, dynamic>? potensiBencanaData, String key) {
     final dynamic potensiData = potensiBencanaData?[key];
     String rawStatus = "Tidak ada data";
 
@@ -162,26 +164,21 @@ class _MapDetailPageState extends State<MapDetailPage> {
     }
   }
 
-  // =================================================================
-  // === FUNGSI BARU: MENGHITUNG PENDERITA DBD DARI FIRESTORE ===
-  // =================================================================
-  /// Fetches the count of DBD reports from Firestore for a specific location.
   Future<void> _fetchDbdCount(String lokasiNama) async {
-    // Prevent querying if the location name isn't loaded yet.
     if (lokasiNama == "Lokasi" || lokasiNama == "Memuat...") {
-        setState(() {
-          _jumlahPenderitaDBD = "0"; // Default to 0 if location is unknown
-        });
-        return;
+      setState(() {
+        _jumlahPenderitaDBD = "0";
+      });
+      return;
     }
 
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('pengaduan_dbd')
-          .where('alamat', isEqualTo: lokasiNama) // Query by location name
+          .where('alamat', isEqualTo: lokasiNama)
           .get();
-      
-      final count = querySnapshot.size; // The number of documents found
+
+      final count = querySnapshot.size;
 
       if (mounted) {
         setState(() {
@@ -194,13 +191,12 @@ class _MapDetailPageState extends State<MapDetailPage> {
       }
       if (mounted) {
         setState(() {
-          _jumlahPenderitaDBD = "Error"; // Show an error on the UI
+          _jumlahPenderitaDBD = "Error";
         });
       }
     }
   }
 
-  /// === LISTEN DATA DARI FIREBASE ===
   void _startListeningToData() {
     _dataSubscription = _databaseRef.onValue.listen(
       (DatabaseEvent event) {
@@ -210,8 +206,12 @@ class _MapDetailPageState extends State<MapDetailPage> {
           final sensorData = locationData['sensor_data'] as Map<dynamic, dynamic>?;
           final potensiBencanaData = locationData['potensi_bencana'] as Map<dynamic, dynamic>?;
 
-          // Extract the location name first
           final newLokasiNama = locationData['nama']?.toString().replaceAll('"', '') ?? "Lokasi";
+          final newPotensiBanjir =
+              _getAndTranslateStatus(potensiBencanaData, 'banjir');
+          final newPotensiDBD =
+              _getAndTranslateStatus(potensiBencanaData, 'dbd');
+
 
           setState(() {
             _lokasiNama = newLokasiNama;
@@ -221,19 +221,20 @@ class _MapDetailPageState extends State<MapDetailPage> {
             _curahHujan = (sensorData?['curah_hujan']?['value'] as num?)?.toDouble() ?? 0.0;
             _kelembapan = (sensorData?['kelembapan']?['value'] as num?)?.toDouble() ?? 0.0;
             _suhu = (sensorData?['suhu']?['value'] as num?)?.toDouble() ?? 0.0;
-            
-            _potensiBanjir = _getAndTranslateStatus(potensiBencanaData, 'banjir');
-            _potensiDBD = _getAndTranslateStatus(potensiBencanaData, 'dbd');
-            
-            // OLD CODE (REMOVED):
-            // _jumlahPenderitaDBD = locationData['jumlah_penderita_dbd']?.toString() ?? "Tidak ada data";
+            _potensiBanjir = newPotensiBanjir;
+            _potensiDBD = newPotensiDBD;
+
+            if (newPotensiBanjir.toLowerCase() == 'tinggi' || newPotensiDBD.toLowerCase() == 'tinggi') {
+              _dangerStatusText = "BAHAYA";
+              _dangerStatusColor = const Color(0xffFF4C4C); // Merah
+              _dangerStatusTextColor = const Color(0xff052659);
+            } else {
+              _dangerStatusText = "AMAN";
+              _dangerStatusColor = Colors.white; // Putih
+              _dangerStatusTextColor = const Color(0xff052659);
+            }
           });
-
-          // =================================================================
-          // === PANGGIL FUNGSI BARU UNTUK MENGAMBIL DATA DARI FIRESTORE ===
-          // =================================================================
           _fetchDbdCount(newLokasiNama);
-
         }
       },
       onError: (error) {
@@ -244,11 +245,8 @@ class _MapDetailPageState extends State<MapDetailPage> {
     );
   }
 
-  /// === UI ===
   @override
   Widget build(BuildContext context) {
-    // The rest of your UI code remains exactly the same.
-    // No changes are needed in the build method.
     return Scaffold(
       body: Container(
         color: const Color(0xFF052659),
@@ -256,7 +254,6 @@ class _MapDetailPageState extends State<MapDetailPage> {
         child: SingleChildScrollView(
           child: Column(
             children: <Widget>[
-              // HEADER
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
@@ -306,7 +303,6 @@ class _MapDetailPageState extends State<MapDetailPage> {
                 ],
               ),
               const SizedBox(height: 20),
-              // LOKASI + TANGGAL & JAM REALTIME
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
@@ -385,15 +381,15 @@ class _MapDetailPageState extends State<MapDetailPage> {
                   ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xffFF4C4C),
+                      backgroundColor: _dangerStatusColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text(
-                      'DANGER',
+                    child: Text(
+                      _dangerStatusText,
                       style: TextStyle(
-                        color: Color(0xff052659),
+                        color: _dangerStatusTextColor,
                         fontWeight: FontWeight.w800,
                         fontFamily: 'DMSans',
                         fontSize: 16,
@@ -403,8 +399,6 @@ class _MapDetailPageState extends State<MapDetailPage> {
                 ],
               ),
               const SizedBox(height: 10),
-
-              // SENSOR CARDS
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
@@ -448,7 +442,6 @@ class _MapDetailPageState extends State<MapDetailPage> {
                 value2: _kelembapan,
                 unit2: '%',
               ),
-              // POTENSI
               Column(
                 children: [
                   PotensiCard(
@@ -508,10 +501,6 @@ class _MapDetailPageState extends State<MapDetailPage> {
     );
   }
 }
-
-// Assume SensorCard, PotensiCard, and _buildSensorInfoBlock are defined in another file or below
-// For completeness, I'll include them here.
-
 
 class SensorCard {
   final String title;

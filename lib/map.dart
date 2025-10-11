@@ -56,68 +56,76 @@ class StatusCircleLayer {
     final markerSize = screenWidth * 0.2;
 
     return MarkerLayer(
-      markers: data.map((item) {
-        final backgroundColor = _getBackgroundColor(item.status);
-        final foregroundColor = _getForegroundColor(item.status);
-        return Marker(
-          point: item.lokasi,
-          width: markerSize,
-          height: markerSize,
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => MapDetailPage(locationKey: item.key)),
-              );
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                  color: backgroundColor.withOpacity(0.9),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: foregroundColor, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 3,
-                    )
-                  ]),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      item.status,
-                      style: TextStyle(
-                        color: foregroundColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: markerSize * 0.25,
-                        height: 1.1,
-                      ),
+      markers:
+          data.map((item) {
+            final backgroundColor = _getBackgroundColor(item.status);
+            final foregroundColor = _getForegroundColor(item.status);
+            return Marker(
+              point: item.lokasi,
+              width: markerSize,
+              height: markerSize,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => MapDetailPage(locationKey: item.key),
                     ),
-                    Row(
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: backgroundColor.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: foregroundColor, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(Icons.person,
-                            color: foregroundColor, size: markerSize * 0.22),
-                        const SizedBox(width: 4),
                         Text(
-                          item.jumlahPenderita.toString(),
+                          item.status,
                           style: TextStyle(
+                            color: foregroundColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: markerSize * 0.25,
+                            height: 1.1,
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.person,
                               color: foregroundColor,
-                              fontSize: markerSize * 0.22),
+                              size: markerSize * 0.22,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              item.jumlahPenderita.toString(),
+                              style: TextStyle(
+                                color: foregroundColor,
+                                fontSize: markerSize * 0.22,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
-                    )
-                  ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        );
-      }).toList(),
+            );
+          }).toList(),
     );
   }
 }
@@ -143,44 +151,51 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<List<StatusArea>> _fetchDataWithCounts(
-      Map<dynamic, dynamic> rtdbData) async {
-    final initialLocations = rtdbData.entries.map((entry) {
-      final item = entry.value as Map<dynamic, dynamic>?;
-      String firebaseStatus =
-          item?['potensi_bencana']?['dbd']?['status'] as String? ??
+    Map<dynamic, dynamic> rtdbData,
+  ) async {
+    final initialLocations =
+        rtdbData.entries.map((entry) {
+          final item = entry.value as Map<dynamic, dynamic>?;
+          String firebaseStatus =
+              item?['potensi_bencana']?['dbd']?['status'] as String? ??
               'Tidak ada data';
-      String displayStatus;
-      switch (firebaseStatus.toUpperCase()) {
-        case 'HIGH':
-          displayStatus = 'Tinggi';
-          break;
-        case 'MID':
-          displayStatus = 'Sedang';
-          break;
-        case 'LOW':
-          displayStatus = 'Rendah';
-          break;
-        default:
-          displayStatus = 'Tidak ada data';
-      }
-      return StatusArea(
-        key: entry.key,
-        nama: item?['nama']?.toString().replaceAll('"', '') ?? 'Tidak Diketahui',
-        lokasi: LatLng((item?['lat'] as num?)?.toDouble() ?? 0.0,
-            (item?['long'] as num?)?.toDouble() ?? 0.0),
-        status: displayStatus,
-        jumlahPenderita: 0,
-        sensorData: item?['sensor_data'] as Map<dynamic, dynamic>? ?? {},
-      );
-    }).toList();
+          String displayStatus;
+          switch (firebaseStatus.toUpperCase()) {
+            case 'HIGH':
+              displayStatus = 'Tinggi';
+              break;
+            case 'MID':
+              displayStatus = 'Sedang';
+              break;
+            case 'LOW':
+              displayStatus = 'Rendah';
+              break;
+            default:
+              displayStatus = 'Tidak ada data';
+          }
+          return StatusArea(
+            key: entry.key,
+            nama:
+                item?['nama']?.toString().replaceAll('"', '') ??
+                'Tidak Diketahui',
+            lokasi: LatLng(
+              (item?['lat'] as num?)?.toDouble() ?? 0.0,
+              (item?['long'] as num?)?.toDouble() ?? 0.0,
+            ),
+            status: displayStatus,
+            jumlahPenderita: 0,
+            sensorData: item?['sensor_data'] as Map<dynamic, dynamic>? ?? {},
+          );
+        }).toList();
 
-    final List<Future<int>> countFutures = initialLocations.map((location) {
-      return FirebaseFirestore.instance
-          .collection('pengaduan_dbd')
-          .where('alamat', isEqualTo: location.nama)
-          .get()
-          .then((snapshot) => snapshot.size);
-    }).toList();
+    final List<Future<int>> countFutures =
+        initialLocations.map((location) {
+          return FirebaseFirestore.instance
+              .collection('pengaduan_dbd')
+              .where('alamat', isEqualTo: location.nama)
+              .get()
+              .then((snapshot) => snapshot.size);
+        }).toList();
 
     final List<int> counts = await Future.wait(countFutures);
 
@@ -188,14 +203,16 @@ class _MapPageState extends State<MapPage> {
     for (int i = 0; i < initialLocations.length; i++) {
       final location = initialLocations[i];
       final count = counts[i];
-      finalLocations.add(StatusArea(
-        key: location.key,
-        nama: location.nama,
-        lokasi: location.lokasi,
-        status: location.status,
-        sensorData: location.sensorData,
-        jumlahPenderita: count,
-      ));
+      finalLocations.add(
+        StatusArea(
+          key: location.key,
+          nama: location.nama,
+          lokasi: location.lokasi,
+          status: location.status,
+          sensorData: location.sensorData,
+          jumlahPenderita: count,
+        ),
+      );
     }
 
     return finalLocations;
@@ -205,16 +222,26 @@ class _MapPageState extends State<MapPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final statusCircleLayer = StatusCircleLayer(dataDaerah);
-    final int totalTinggi = dataDaerah.where((item) => item.status.toLowerCase() == 'tinggi').length;
-    final int totalSedang = dataDaerah.where((item) => item.status.toLowerCase() == 'sedang').length;
-    final int totalRendah = dataDaerah.where((item) => item.status.toLowerCase() == 'rendah').length;
+    final int totalTinggi =
+        dataDaerah
+            .where((item) => item.status.toLowerCase() == 'tinggi')
+            .length;
+    final int totalSedang =
+        dataDaerah
+            .where((item) => item.status.toLowerCase() == 'sedang')
+            .length;
+    final int totalRendah =
+        dataDaerah
+            .where((item) => item.status.toLowerCase() == 'rendah')
+            .length;
 
     return SingleChildScrollView(
       child: Container(
         height: screenHeight,
         width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05)
-            .copyWith(top: screenHeight * 0.05),
+        padding: EdgeInsets.symmetric(
+          horizontal: screenWidth * 0.05,
+        ).copyWith(top: screenHeight * 0.05),
         color: const Color(0xFFF5F5F5),
         child: Column(
           children: <Widget>[
@@ -227,35 +254,45 @@ class _MapPageState extends State<MapPage> {
                   children: <Widget>[
                     Row(
                       children: <Widget>[
-                        Image.asset('assets/icons/location.png',
-                            width: 20, height: 16),
+                        Image.asset(
+                          'assets/icons/location.png',
+                          width: 20,
+                          height: 16,
+                        ),
                         const SizedBox(width: 8),
-                        const Text('Pesisir Selatan',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontFamily: 'DMSans',
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF043F89))),
+                        const Text(
+                          'Pesisir Selatan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'DMSans',
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF043F89),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(_tanggal,
-                        style: const TextStyle(
-                            fontSize: 16,
-                            fontFamily: 'DMSans',
-                            fontWeight: FontWeight.w300,
-                            color: Color(0xFF011023))),
+                    Text(
+                      _tanggal,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontFamily: 'DMSans',
+                        fontWeight: FontWeight.w300,
+                        color: Color(0xFF011023),
+                      ),
+                    ),
                   ],
                 ),
                 Container(
                   height: 60,
                   width: screenWidth * 0.45,
-                  padding: const EdgeInsets.only(left: 20, right: 8),
+                  padding: const EdgeInsets.only(left: 20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                        colors: [Color(0xFF204166), Color(0xFF14438B)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight),
+                      colors: [Color(0xFF204166), Color(0xFF14438B)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
                     borderRadius: BorderRadius.circular(35),
                   ),
                   child: Row(
@@ -265,26 +302,47 @@ class _MapPageState extends State<MapPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            Text(_firstName,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    fontSize: 16,
-                                    fontFamily: 'DMSans',
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white)),
+                            Text(
+                              _firstName,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontFamily: 'DMSans',
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
                             const SizedBox(height: 4),
-                            const Text("Warga Lokal",
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    fontFamily: 'DMSans',
-                                    fontWeight: FontWeight.w200,
-                                    color: Colors.white)),
+                            const Text(
+                              "Warga Lokal",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'DMSans',
+                                fontWeight: FontWeight.w200,
+                                color: Colors.white,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      const CircleAvatar(
-                          radius: 22,
-                          backgroundImage: AssetImage('assets/icons/user.png')),
+                      LayoutBuilder(
+                        builder: (
+                          BuildContext context,
+                          BoxConstraints constraints,
+                        ) {
+                          double radius = constraints.biggest.shortestSide / 2;
+
+                          return CircleAvatar(
+                            radius: radius,
+                            backgroundImage: const AssetImage(
+                              'assets/icons/user.png',
+                            ),
+                            onBackgroundImageError: (exception, stackTrace) {
+                              print('Error loading image: $exception');
+                            },
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -302,8 +360,10 @@ class _MapPageState extends State<MapPage> {
                     minZoom: 8.7,
                     maxZoom: 25,
                     interactionOptions: InteractionOptions(
-                        flags: InteractiveFlag.pinchZoom |
-                            InteractiveFlag.doubleTapZoom),
+                      flags:
+                          InteractiveFlag.pinchZoom |
+                          InteractiveFlag.doubleTapZoom,
+                    ),
                   ),
                   children: [
                     TileLayer(
@@ -319,17 +379,17 @@ class _MapPageState extends State<MapPage> {
             Column(
               children: <Widget>[
                 PotensiCard(
-                        title: '$totalTinggi Daerah Berpotensi DBD',
-                        status: "Tinggi")
-                    .buildWidget(),
+                  title: '$totalTinggi Daerah Berpotensi DBD',
+                  status: "Tinggi",
+                ).buildWidget(),
                 PotensiCard(
-                        title: '$totalSedang Daerah Berpotensi DBD',
-                        status: "Sedang")
-                    .buildWidget(),
+                  title: '$totalSedang Daerah Berpotensi DBD',
+                  status: "Sedang",
+                ).buildWidget(),
                 PotensiCard(
-                        title: '$totalRendah Daerah Berpotensi DBD',
-                        status: "Rendah")
-                    .buildWidget(),
+                  title: '$totalRendah Daerah Berpotensi DBD',
+                  status: "Rendah",
+                ).buildWidget(),
               ],
             ),
           ],
@@ -356,23 +416,30 @@ class _MapPageState extends State<MapPage> {
                 snapshot.data?.snapshot.value as Map<dynamic, dynamic>?;
             if (dataFromFirebase == null || dataFromFirebase.isEmpty) {
               return const Center(
-                  child: Text('Tidak ada data lokasi yang tersedia.'));
+                child: Text('Tidak ada data lokasi yang tersedia.'),
+              );
             }
 
             return FutureBuilder<List<StatusArea>>(
               future: _fetchDataWithCounts(dataFromFirebase),
-              builder:
-                  (context, AsyncSnapshot<List<StatusArea>> countSnapshot) {
+              builder: (
+                context,
+                AsyncSnapshot<List<StatusArea>> countSnapshot,
+              ) {
                 if (countSnapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: Text("Menghitung laporan..."));
                 }
                 if (countSnapshot.hasError) {
                   return Center(
-                      child: Text(
-                          'Gagal menghitung laporan: ${countSnapshot.error}'));
+                    child: Text(
+                      'Gagal menghitung laporan: ${countSnapshot.error}',
+                    ),
+                  );
                 }
                 if (!countSnapshot.hasData || countSnapshot.data!.isEmpty) {
-                  return const Center(child: Text('Data lengkap tidak tersedia.'));
+                  return const Center(
+                    child: Text('Data lengkap tidak tersedia.'),
+                  );
                 }
                 final dataDaerahWithCounts = countSnapshot.data!;
                 return _buildMapUI(dataDaerahWithCounts);
@@ -397,8 +464,18 @@ class _MapPageState extends State<MapPage> {
 
   String _getNamaBulan(int month) {
     const bulan = [
-      "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
-      "Agustus", "September", "Oktober", "November", "Desember"
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
     ];
     return bulan[month - 1];
   }
@@ -406,8 +483,9 @@ class _MapPageState extends State<MapPage> {
   Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final docRef =
-          FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
       try {
         final doc = await docRef.get();
         final data = doc.data();
@@ -426,7 +504,7 @@ class _MapPageState extends State<MapPage> {
             'lastName': '',
             'phoneNumber': '',
             'address': '',
-            'email': user.email ?? ''
+            'email': user.email ?? '',
           });
           setState(() {
             _firstName = fName;
@@ -436,7 +514,8 @@ class _MapPageState extends State<MapPage> {
         if (mounted) {
           print('Error loading user data: $e');
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Gagal memuat data pengguna.')));
+            const SnackBar(content: Text('Gagal memuat data pengguna.')),
+          );
         }
       }
     }

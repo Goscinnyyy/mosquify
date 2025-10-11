@@ -25,7 +25,9 @@ class _HomePageState extends State<HomePage> {
   String _curahHujan = "N/A";
   String _potensiBanjir = "Memuat...";
   String _potensiDBD = "Memuat...";
-
+  String _dangerStatusText = "Memuat...";
+  Color _dangerStatusColor = Colors.grey;
+  Color _dangerStatusTextColor = Colors.white;
   DatabaseReference? _databaseRef;
   StreamSubscription? _dataSubscription;
 
@@ -126,6 +128,14 @@ class _HomePageState extends State<HomePage> {
         final data = event.snapshot.value;
         if (data != null && data is Map) {
           final Map<dynamic, dynamic> locationData = Map.from(data);
+          final newPotensiBanjir = _getAndTranslateStatus(
+            locationData['potensi_bencana'] as Map<dynamic, dynamic>?,
+            'banjir',
+          );
+          final newPotensiDBD = _getAndTranslateStatus(
+            locationData['potensi_bencana'] as Map<dynamic, dynamic>?,
+            'dbd',
+          );
           setState(() {
             final sensorMap =
                 locationData['sensor_data'] as Map<dynamic, dynamic>?;
@@ -143,11 +153,19 @@ class _HomePageState extends State<HomePage> {
               _curahHujan =
                   '${(curahHujanValue?.toDouble() ?? 0.0).toStringAsFixed(1)} mm';
             }
+            _potensiBanjir = newPotensiBanjir;
+            _potensiDBD = newPotensiDBD;
 
-            final potensiMap =
-                locationData['potensi_bencana'] as Map<dynamic, dynamic>?;
-            _potensiBanjir = _getAndTranslateStatus(potensiMap, 'banjir');
-            _potensiDBD = _getAndTranslateStatus(potensiMap, 'dbd');
+            if (newPotensiBanjir.toLowerCase() == 'tinggi' ||
+                newPotensiDBD.toLowerCase() == 'tinggi') {
+              _dangerStatusText = "BAHAYA";
+              _dangerStatusColor = const Color(0xffFF4C4C); // Merah
+              _dangerStatusTextColor = const Color(0xff052659);
+            } else {
+              _dangerStatusText = "AMAN";
+              _dangerStatusColor = Colors.white; // Putih
+              _dangerStatusTextColor = const Color(0xff052659);
+            }
           });
         } else {
           setState(() {
@@ -378,7 +396,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                             SizedBox(height: screenHeight * 0.01),
                             Text(
-                              "Suhu          : $_suhu",
+                              "Suhu             : $_suhu",
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontFamily: 'DMSans',
@@ -444,17 +462,17 @@ class _HomePageState extends State<HomePage> {
                           width: screenWidth * 0.25,
                           height: screenHeight * 0.05,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: _dangerStatusColor,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
-                              "AMAN",
+                              _dangerStatusText,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontFamily: 'DMSans',
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF1D416C),
+                                color:_dangerStatusTextColor,
                               ),
                               textAlign: TextAlign.center,
                             ),
